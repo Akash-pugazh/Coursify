@@ -45,11 +45,10 @@ mongoose.connect(
   "mongodb+srv://Aakash:aakash13@cluster-0.bkum328.mongodb.net/Coursify"
 );
 
-const generateJsonMessage = (status, message, ...rest) => {
+const generateJsonMessage = (status, message) => {
   return {
     status,
     message,
-    token: rest,
   };
 };
 
@@ -123,7 +122,7 @@ app.post("/admin/signup", async (req, res) => {
   const isAdminExist = await Admin.findOne({ userName });
   if (isAdminExist) {
     return res
-      .status(400)
+      .status(403)
       .json(generateJsonMessage("Failure", "Admin already exist"));
   } else {
     const newAdminObj = {
@@ -134,11 +133,11 @@ app.post("/admin/signup", async (req, res) => {
     const newAdmin = new Admin(newAdminObj);
     await newAdmin.save();
     const token = generateAdminJWT(newAdminObj);
-    res
-      .status(200)
-      .json(
-        generateJsonMessage("Success", "Admin created successfully", token)
-      );
+    res.status(200).json({
+      status: "Success",
+      message: "Admin created successfully",
+      token,
+    });
   }
 });
 
@@ -153,11 +152,11 @@ app.post("/admin/login", async (req, res) => {
   });
   if (isAdminExist) {
     const token = generateAdminJWT(isAdminExist);
-    res
-      .status(200)
-      .json(
-        generateJsonMessage("Success", "Login authorized successfully", token)
-      );
+    res.status(200).json({
+      status: "Success",
+      message: "Login Authorized successfully",
+      token,
+    });
   } else {
     res.status(400).json(generateJsonMessage("Failure", "Unauthorized Login"));
   }
@@ -222,9 +221,7 @@ app.post("/users/signup", async (req, res) => {
   // const isUserExist = USERS.find(user => user.userName === userName);
   const isUserExist = await User.findOne({ userName });
   if (isUserExist) {
-    return res
-      .status(400)
-      .json(generateJsonMessage("Failure", "User already exist"));
+    res.status(403).json(generateJsonMessage("Failure", "User already exist"));
   } else {
     const newUserObj = {
       userName,
@@ -235,9 +232,12 @@ app.post("/users/signup", async (req, res) => {
     const newUser = new User(newUserObj);
     newUser.save();
     const token = generateUserJWT(newUserObj);
-    res
-      .status(200)
-      .json(generateJsonMessage("Success", "User created successfully", token));
+    req.headers.authorization = token;
+    res.status(200).json({
+      status: "Success",
+      message: "User created Successfully",
+      token,
+    });
   }
 });
 
@@ -249,11 +249,12 @@ app.post("/users/login", async (req, res) => {
   const isUserExist = await User.findOne({ userName, password });
   if (isUserExist) {
     const token = generateUserJWT(isUserExist);
-    res
-      .status(200)
-      .json(
-        generateJsonMessage("Success", "Login authorized successfully", token)
-      );
+    req.headers.authorization = token;
+    res.status(200).json({
+      status: "Success",
+      message: "Login authorized successfully",
+      token,
+    });
   } else {
     res.status(400).json(generateJsonMessage("Failure", "Unauthorized Login"));
   }
